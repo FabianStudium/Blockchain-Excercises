@@ -3,7 +3,7 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 /*
-abstract contract AbstractVoting {
+abstract contract IVoting {
     function register() public virtual;
     function voteFor(address) public virtual;
     function numberOfVotesReceivedFor(address) view public virtual returns(uint);
@@ -16,7 +16,7 @@ abstract contract AbstractVoting {
  * @dev Implements voting process along with vote delegation
  */
 
- contract Voting // is AbstractVoting
+ contract Voting // is IVoting
  {
     struct Voter 
     {
@@ -42,30 +42,16 @@ abstract contract AbstractVoting {
 
     Candidate[] candidates;
 
-    constructor(bytes32[] memory candidateNames, address[] memory candidateAdress)
+    constructor(bytes32[] memory _candidateNames, address[] memory _candidateAdress)
     {
-
-        /*
-        candidates[0] is dummy for errorhandling ... otherwise I encounter too many uint <-> int TypeErrors
-        */
-
-        /*
-        candidates.push(Candidate(
-            {
-                name: 0x44756d6d79000000000000000000000000000000000000000000000000000000, // name: "dummy"
-                voteCount: 0,
-                ETHAddress: address(0x0000000000000000000000000000000000000000)
-            }
-        ));
-        */
-
-        for(uint i = candidateNames.length; i > 0; i--)
+        for(uint i = 0; i < _candidateNames.length; i++)
         {
-            candidates.push(Candidate(
-                {
-                    name: candidateNames[i],
+            // require(candidateAdress[i] != null, "Candiate has no address.");
+
+            candidates.push(Candidate({
+                    name: _candidateNames[i],
                     voteCount: 0,
-                    ETHAddress: candidateAdress[i]
+                    ETHAddress: _candidateAdress[i]
                 }));
         }
     }
@@ -78,14 +64,14 @@ abstract contract AbstractVoting {
         voters[msg.sender].registered = true;
     }
 
-    function voteFor(address candidateAddress) public // override
+    function voteFor(address _address) public // override
     {
         // Voter storage sender = voters[msg.sender];
-        require(!voters[msg.sender].registered, "Person has not registered as voter yet.");
+        require(voters[msg.sender].registered, "Person has not registered as voter yet.");
         require(!voters[msg.sender].voted, "Person already voted.");
 
-        uint candidate = findCandidate(candidateAddress);
-        require(candidate == 0, "Candidate's adress does not exist.");
+        uint candidate = findCandidate(_address);
+        // require(candidate == 0, "Candidate's adress does not exist.");
         
         voters[msg.sender].vote = candidate;
 
@@ -93,11 +79,13 @@ abstract contract AbstractVoting {
         voters[msg.sender].voted = true;
     }
 
-    function findCandidate(address searchAdress) view private
+
+    function findCandidate(address _address) view private
             returns(uint)
     {
-        for(uint i = candidates.length; i > 0; i--){
-            if(candidates[i].ETHAddress == searchAdress){
+        for(uint i = 0; i < candidates.length; i++)
+        {
+            if(candidates[i].ETHAddress == _address){
                 return i;
             }
         }
@@ -105,10 +93,23 @@ abstract contract AbstractVoting {
         //return 0;
     }
 
-    function numberOfVotesReceivedFor(address candidateAddress) view public // override
-            returns(uint votes) 
+    /*
+    @error: function not callable ... ???
+    */
+    function numberOfVotesReceivedFor(address _address) public view returns(uint) 
     {
-        uint candidate = findCandidate(candidateAddress);
+        uint candidate = findCandidate(_address);
         return candidates[candidate].voteCount;
     }
+
+/*
+    // Keine Ahnung was die requ fuer die func sind!
+    
+    function winnersAndNumberOfWinningVotes() view public virtual returns(address[] memory, uint) 
+    {
+        address[] memory winners;
+        uint votes;
+        return(winners, votes);
+    }
+*/
  }
