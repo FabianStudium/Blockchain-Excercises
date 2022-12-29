@@ -1,4 +1,4 @@
-# Blockchain-Excercises
+# Blockchain-Excercises Angaben
 
 ## Exercise 3: Ethereum Smart Contract
 ---
