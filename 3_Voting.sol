@@ -80,7 +80,7 @@ abstract contract IVoting {
     }
 
 
-    function findCandidate(address _address) view private returns(uint)
+    function findCandidate(address _address) private view returns(uint)
     {
         for(uint i = 0; i < candidates.length; i++)
         {
@@ -97,7 +97,7 @@ abstract contract IVoting {
         return candidates[candidate].voteCount;
     }
 
-    function winnersAndNumberOfWinningVotes() view public override returns(address[] memory, uint) 
+    function winnersAndNumberOfWinningVotes() public view override returns(address[] memory, uint) 
     {
         uint highestVote = 0;
         uint winnerPosition = 0;
