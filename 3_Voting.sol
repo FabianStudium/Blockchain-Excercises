@@ -2,21 +2,21 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-/*
+
 abstract contract IVoting {
     function register() public virtual;
     function voteFor(address) public virtual;
     function numberOfVotesReceivedFor(address) view public virtual returns(uint);
-    // function winnersAndNumberOfWinningVotes() view public virtual returns(address[] memory, uint);
+    function winnersAndNumberOfWinningVotes() view public virtual returns(address[] memory, uint);
 }
-*/
+
 
 /** 
  * @title Voting
  * @dev Implements voting process along with vote delegation
  */
 
- contract Voting // is IVoting
+ contract Voting is IVoting
  {
     struct Voter 
     {
@@ -56,15 +56,16 @@ abstract contract IVoting {
         }
     }
 
-    function register() public // override
+    function register() public override
     {
-        // not implemented
+        require(!voters[msg.sender].registered, "Already registered.");
+
         voters[msg.sender].weight = 1;
         voters[msg.sender].voted = false;
         voters[msg.sender].registered = true;
     }
 
-    function voteFor(address _address) public // override
+    function voteFor(address _address) public override
     {
         // Voter storage sender = voters[msg.sender];
         require(voters[msg.sender].registered, "Person has not registered as voter yet.");
@@ -85,7 +86,8 @@ abstract contract IVoting {
     {
         for(uint i = 0; i < candidates.length; i++)
         {
-            if(candidates[i].ETHAddress == _address){
+            if(candidates[i].ETHAddress == _address)
+            {
                 return i;
             }
         }
@@ -96,20 +98,35 @@ abstract contract IVoting {
     /*
     @error: function not callable ... ???
     */
-    function numberOfVotesReceivedFor(address _address) public view returns(uint) 
+    function numberOfVotesReceivedFor(address _address) public view override returns(uint) 
     {
         uint candidate = findCandidate(_address);
         return candidates[candidate].voteCount;
     }
 
-/*
-    // Keine Ahnung was die requ fuer die func sind!
-    
-    function winnersAndNumberOfWinningVotes() view public virtual returns(address[] memory, uint) 
+    function winnersAndNumberOfWinningVotes() view public override returns(address[] memory, uint) 
     {
-        address[] memory winners;
-        uint votes;
-        return(winners, votes);
+        uint highestVote = 0;
+        uint winnerPosition = 0;
+        address[] memory winners = new address[](candidates.length);
+        
+        for(uint i = 0; i < candidates.length; i++)
+        {
+            if(candidates[i].voteCount > highestVote)
+            {
+                highestVote = candidates[i].voteCount;
+            }
+        }
+
+        for(uint i = 0; i < candidates.length; i++)
+        {
+            if(candidates[i].voteCount == highestVote)
+            {
+                winners[winnerPosition] = candidates[i].ETHAddress;
+                winnerPosition++;
+            }
+        }
+
+        return(winners, highestVote);
     }
-*/
- }
+}
