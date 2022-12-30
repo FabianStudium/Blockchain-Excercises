@@ -2,134 +2,157 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-
 abstract contract IVoting {
     function register() public virtual;
+
     function voteFor(address) public virtual;
-    function numberOfVotesReceivedFor(address) view public virtual returns(uint);
-    function winnersAndNumberOfWinningVotes() view public virtual returns(address[] memory, uint);
+
+    function numberOfVotesReceivedFor(address)
+        public
+        view
+        virtual
+        returns (uint256);
+
+    function winnersAndNumberOfWinningVotes()
+        public
+        view
+        virtual
+        returns (address[] memory, uint256);
 }
 
-/** 
+/**
  * @title Voting
  * @dev Implements voting process
  */
 
- contract Voting is IVoting
- {
-    struct Voter 
-    {
-        uint vote;   // index of the voted candidate
-                    // has to be int bc finding the candidate address from candidates[] can return -1 for errorhandling
-        bool voted;  // if true, that person already voted
-        uint weight; // weight is accumulated by delegation ... @dev could be extendet with vote-delegation
-        bool registered;  // if false, that person is not registered
+contract Voting is IVoting {
+    struct Voter {
+        bool _voted; // if true, that person already voted
+        // bytes32 _name; // short name (up to 32 bytes) ... zb 0x1000000000000000000000000000000000000000000000000000000000000000
+        bool _registered; // if false, that person is not registered
+        uint256 _voteCount; // number of accumulated votes
+        address _votedFor; // index of the voted candidate
+        address _address; // Holds a 20 byte value (size of an Ethereum address)
     }
 
-    struct Candidate 
-    {
-        // If you can limit the length to a certain number of bytes, 
-        // always use one of bytes1 to bytes32 because they are much cheaper
-        bytes32 name;   // short name (up to 32 bytes) ... zb 0x1000000000000000000000000000000000000000000000000000000000000000
-        uint voteCount; // number of accumulated votes
-        address ETHAddress; // Holds a 20 byte value (size of an Ethereum address)
+    struct Winners {
+        uint256 _highestVote;
+        address[] _addresses; // doesn't allow memory?
     }
 
-    // address public chairperson;
-
+    Winners _winners;
     mapping(address => Voter) voters;
 
-    Candidate[] candidates;
-
-    constructor(bytes32[] memory _candidateNames, address[] memory _candidateAdress)
-    {
-        for(uint i = 0; i < _candidateNames.length; i++)
-        {
-            // require(candidateAdress[i] != null, "Candiate has no address.");
-
-            candidates.push(Candidate({
-                    name: _candidateNames[i],
-                    voteCount: 0,
-                    ETHAddress: _candidateAdress[i]
-                }));
+    /*
+     * List if Candidate (addresses) get initialised and registered.
+     */
+    constructor(
+        // bytes32[] memory _candidateNames,
+        address[] memory _candidateAdresses
+    ) {
+        for (uint256 i = 0; i < _candidateAdresses.length; i++) {
+            voters[_candidateAdresses[i]]._voted = false;
+            voters[_candidateAdresses[i]]._registered = true;
+            voters[_candidateAdresses[i]]._voteCount = 0;
+            voters[_candidateAdresses[i]]._votedFor = address(
+                0x0000000000000000000000000000000000000000 // null address bc not voted yet
+            );
+            voters[_candidateAdresses[i]]._address = _candidateAdresses[i];
         }
     }
 
-    function register() public override
-    {
-        require(!voters[msg.sender].registered, "Already registered.");
+    /*
+     * Function to register a new user. User then can vote or receive votes from other users.
+     */
+    function register() public override { // should be with address ad param to prevent code duplication
+        require(!voters[msg.sender]._registered, "Already registered.");
 
-        voters[msg.sender].weight = 1;
-        voters[msg.sender].voted = false;
-        voters[msg.sender].registered = true;
+        voters[msg.sender]._voted = false;
+        voters[msg.sender]._registered = true;
+        voters[msg.sender]._voteCount = 0;
+        voters[msg.sender]._votedFor = address(
+            0x0000000000000000000000000000000000000000 // null address bc not voted yet
+        );
+        voters[msg.sender]._address = msg.sender;
     }
 
-    function voteFor(address _address) public override
-    {
-        // Voter storage sender = voters[msg.sender];
-        require(voters[msg.sender].registered, "Person has not registered as voter yet.");
-        require(!voters[msg.sender].voted, "Person already voted.");
+    /*
+     * Function to vote for another candidate.
+     */
+    function voteFor(address _candidate) public override {
+        /*
+         * errorhandling
+         */
+        require(
+            voters[msg.sender]._registered,
+            "The voter has not registered as voter yet."
+        );
+        require(
+            !voters[msg.sender]._voted, 
+            "Voter already voted."
+        );
+        require(
+            voters[msg.sender]._address != _candidate,
+            "Voter can't vote for him/herself"
+        );
+        require(
+            voters[_candidate]._registered,
+            "Candidate doesn't exist yet. Needs to be registered first."
+        );
 
-        uint candidate = findCandidate(_address);
-        require(candidate < candidates.length, "Address does not exist in candidates list.");
-        
-        voters[msg.sender].vote = candidate;
+        voters[msg.sender]._votedFor = _candidate; // safe voters choice
+        voters[_candidate]._voteCount++; // add vote
+        voters[msg.sender]._voted = true;
 
-        candidates[candidate].voteCount += voters[msg.sender].weight;
-        voters[msg.sender].voted = true;
+        calculateWinners(_candidate); // calculate winner(s)
     }
 
-
-    function findCandidate(address _address) private view returns(uint)
+    /*
+     * Function
+     */
+    function numberOfVotesReceivedFor(address _candidate)
+        public
+        view
+        override
+        returns (uint256)
     {
-        for(uint i = 0; i < candidates.length; i++)
-        {
-            if(candidates[i].ETHAddress == _address)
-            {
-                return i;
-            }
-        }
+        require(
+            voters[msg.sender]._registered,
+            "Person has not registered as voter yet."
+        );
 
-        return candidates.length + 1; // error; out of bounce
+        require(
+            voters[_candidate]._registered,
+            "Candidate doesn't exist yet. Needs to be registered first."
+        );
+
+        return voters[_candidate]._voteCount;
     }
 
-    function numberOfVotesReceivedFor(address _address) public view override returns(uint) 
+    function winnersAndNumberOfWinningVotes()
+        public
+        view
+        override
+        returns (address[] memory, uint256)
     {
-        uint candidate = findCandidate(_address);
-        require(candidate < candidates.length, "Address does not exist in candidates list.");
-        return candidates[candidate].voteCount;
+        require(
+            _winners._highestVote > 0, 
+            "No votes have taken place yet."
+        );
+        require(
+            voters[msg.sender]._voted,
+            "You first have to vote before seeing the results."
+        );
+
+        return (_winners._addresses, _winners._highestVote);
     }
 
-    function winnersAndNumberOfWinningVotes() public view override returns(address[] memory, uint) 
-    {
-        uint highestVote = 0;
-        uint winnerPosition = 0;
-        address[] memory candidates_result = new address[](candidates.length);
-        
-        for(uint i = 0; i < candidates.length; i++)
-        {
-            if(candidates[i].voteCount > highestVote)
-            {
-                highestVote = candidates[i].voteCount;
-            }
+    function calculateWinners(address _candidate) private {
+        if (voters[_candidate]._voteCount > _winners._highestVote) {
+            _winners._highestVote = voters[_candidate]._voteCount;
+            _winners._addresses.push(voters[_candidate]._address);
+        } else if (voters[_candidate]._voteCount == _winners._highestVote) {
+            _winners._addresses.push(voters[_candidate]._address);
         }
-
-        for(uint i = 0; i < candidates.length; i++)
-        {
-            if(candidates[i].voteCount == highestVote)
-            {
-                candidates_result[winnerPosition] = candidates[i].ETHAddress;
-                winnerPosition++;
-            }
-        }
-
-        address[] memory winners = new address[](winnerPosition);
-
-        for(uint i = 0; i < winnerPosition; i++)
-        {
-            winners[i] = candidates_result[i];
-        }
-
-        return(winners, highestVote);
     }
 }
