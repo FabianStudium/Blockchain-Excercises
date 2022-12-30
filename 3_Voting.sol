@@ -71,7 +71,7 @@ abstract contract IVoting {
         require(!voters[msg.sender].voted, "Person already voted.");
 
         uint candidate = findCandidate(_address);
-        // require(candidate == 0, "Candidate's adress does not exist.");
+        require(candidate < candidates.length, "Address does not exist in candidates list.");
         
         voters[msg.sender].vote = candidate;
 
@@ -89,11 +89,14 @@ abstract contract IVoting {
                 return i;
             }
         }
+
+        return candidates.length + 1; // error; out of bounce
     }
 
     function numberOfVotesReceivedFor(address _address) public view override returns(uint) 
     {
         uint candidate = findCandidate(_address);
+        require(candidate < candidates.length, "Address does not exist in candidates list.");
         return candidates[candidate].voteCount;
     }
 
@@ -101,7 +104,7 @@ abstract contract IVoting {
     {
         uint highestVote = 0;
         uint winnerPosition = 0;
-        address[] memory winners = new address[](candidates.length);
+        address[] memory candidates_result = new address[](candidates.length);
         
         for(uint i = 0; i < candidates.length; i++)
         {
@@ -115,9 +118,16 @@ abstract contract IVoting {
         {
             if(candidates[i].voteCount == highestVote)
             {
-                winners[winnerPosition] = candidates[i].ETHAddress;
+                candidates_result[winnerPosition] = candidates[i].ETHAddress;
                 winnerPosition++;
             }
+        }
+
+        address[] memory winners = new address[](winnerPosition);
+
+        for(uint i = 0; i < winnerPosition; i++)
+        {
+            winners[i] = candidates_result[i];
         }
 
         return(winners, highestVote);
