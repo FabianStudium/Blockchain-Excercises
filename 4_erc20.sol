@@ -1,15 +1,19 @@
+// contracts/GLDToken.sol
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract PlatinToken is ERC20 
+contract PlatinTokenPrivate is ERC20 
 {
-    uint supply;
+    /*
+    @dev rewrite to mapping ... works fine with an array but "looks" better with a map
+    */
     address[] whitelisted; // array of "whitelisted" recipients, can only be added to by accounts holding PLT
 
-    constructor() ERC20("Platin", "PLT") 
+    constructor() ERC20("PlatinPrivate", "PLTP") 
     {
-        supply = 1000000000000000000000; // total supply 1000 units with 18 dezimals (000000000000000000)
+        uint supply = 1000000000000000000000; // total supply 1000 units with 18 dezimals (000000000000000000)
         
         // set total supply of tokens to $supply
         _mint(msg.sender, supply);
@@ -18,10 +22,12 @@ contract PlatinToken is ERC20
         whitelisted.push(msg.sender);
     }
 
-    function whitelist(address tokenholder, address recipient) public
+    function whitelist(address recipient) public
     {
-
-        require(balanceOf(tokenholder) > 0, "Only token holders can whitelist recipients.");
+        /*
+         * @error: msg.sender == recipient ... und nicht die addresse, die die Funk tatsaechlich ausfuehrt
+         */
+        require(balanceOf(msg.sender) > 0, "Only token holders can whitelist recipients.");
         
         /*
         @dev check if address is right format: 20 byte hex
@@ -36,6 +42,8 @@ contract PlatinToken is ERC20
                 alreadyWhitelisted = true;
             }
         }
+
+        require(!alreadyWhitelisted, "Address already whitelisted.")
 
         if(!alreadyWhitelisted)
         {
