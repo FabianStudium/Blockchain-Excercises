@@ -10,10 +10,9 @@ abstract contract IVoting {
     function winnersAndNumberOfWinningVotes() view public virtual returns(address[] memory, uint);
 }
 
-
 /** 
  * @title Voting
- * @dev Implements voting process along with vote delegation
+ * @dev Implements voting process
  */
 
  contract Voting is IVoting
@@ -81,8 +80,7 @@ abstract contract IVoting {
     }
 
 
-    function findCandidate(address _address) view private
-            returns(uint)
+    function findCandidate(address _address) view private returns(uint)
     {
         for(uint i = 0; i < candidates.length; i++)
         {
@@ -91,13 +89,8 @@ abstract contract IVoting {
                 return i;
             }
         }
-
-        //return 0;
     }
 
-    /*
-    @error: function not callable ... ???
-    */
     function numberOfVotesReceivedFor(address _address) public view override returns(uint) 
     {
         uint candidate = findCandidate(_address);
