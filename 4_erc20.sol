@@ -11,7 +11,7 @@ contract PlatinTokenPrivate is ERC20
     */
     address[] whitelisted; // array of "whitelisted" recipients, can only be added to by accounts holding PLT
 
-    constructor() ERC20("PlatinPrivate", "PLTP") 
+    constructor() ERC20("PlatinPrivate", "PLTP")
     {
         uint supply = 1000000000000000000000; // total supply 1000 units with 18 dezimals (000000000000000000)
         
@@ -25,14 +25,15 @@ contract PlatinTokenPrivate is ERC20
     function whitelist(address recipient) public
     {
         /*
-         * @error: msg.sender == recipient ... und nicht die addresse, die die Funk tatsaechlich ausfuehrt
+         * @bug (remix vm): msg.sender == recipient ... und nicht die addresse, die die Funk tatsaechlich ausfuehrt
+         * apparently works when @Raphi deploys the contract
+         * WORKS when deployed @ Georli network
          */
         require(balanceOf(msg.sender) > 0, "Only token holders can whitelist recipients.");
         
         /*
         @dev check if address is right format: 20 byte hex
         */
-
         bool alreadyWhitelisted = false;
 
         for(uint i = whitelisted.length; i > 0; i--)
@@ -43,7 +44,7 @@ contract PlatinTokenPrivate is ERC20
             }
         }
 
-        require(!alreadyWhitelisted, "Address already whitelisted.")
+        require(!alreadyWhitelisted, "Address already whitelisted.");
 
         if(!alreadyWhitelisted)
         {
