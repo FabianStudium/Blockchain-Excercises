@@ -1,0 +1,6 @@
+{
+    "name": "Intelligence",
+    "description": "Increases the player's intelligence",
+    "image": "https://battlecoob.github.io/Blockchain-Excercises/ERC721_meta/png/intelligence_icon.png",
+    "intelligence": 50
+}
