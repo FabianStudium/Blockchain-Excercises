@@ -1,0 +1,6 @@
+{
+    "name": "Strength",
+    "description": "Increases the player's strength",
+    "image": "https://battlecoob.github.io/Blockchain-Excercises/ERC712_meta/png/strength_icon.png",
+    "strength": 50
+}
