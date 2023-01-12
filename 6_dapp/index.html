@@ -4,14 +4,64 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.2.9/dist/web3.min.js"></script>
+
+    <title>First DAPP</title>
 </head>
 <body>
     <h1>First Web3 Website</h1>
+    <h2>Part 1</h2>
+    <button onclick="getBlockHeight()">Get Goerli Block Height</button>
+    <input type="text" id="blockHeight" disabled>
+    <h2>Part 2</h2>
+    <button onclick="getBalance()">Get Balance</button>
+    <input type="text" id="balance" disabled>
 </body>
 
 <script>
-    const web3 = new Web3(window.ethereum)
-    web3 == null ? console.log("null") : console.log("not null")
-</script>
+    // Part 1
+    // Check if web3 is injected by the browser (MetaMask)
+    if (typeof web3 !== 'undefined') {
+      // Use the provider injected by MetaMask
+      web3 = new Web3(web3.currentProvider);
+    } else {
+      // Use a fallback provider, in this case the Görli testnet
+      web3 = new Web3(new Web3.providers.HttpProvider("https://goerli.infura.io/v3/04a95ed549914d44ac2cb18152bb3dca"));
+    }
+
+    function getBlockHeight() {
+      web3.eth.getBlockNumber().then(function(blockNumber) {
+        document.getElementById("blockHeight").value = blockNumber;
+      });
+    }
+
+    // Part 2
+    // Contract ABI
+    var contractABI;
+    // Read the ABI from the "platin-private" file
+    fetch("platin-private.json")
+        .then(response => response.json())
+        .then(json => {
+            contractABI = json;
+        });
+
+    // Contract address on the Görli testnet
+    var contractAddress = "0xC1EeB68cE9a6Ff654C8Ea8b05C0Ed6a14717e273";
+
+    // Create a contract object
+    var contract = new web3.eth.Contract(contractABI, contractAddress);
+
+    function getBalance() {
+      // Get the address of the current account selected in MetaMask
+      web3.eth.getAccounts().then(function(accounts) {
+        var account = accounts[0];
+
+        // Call the balanceOf() function of the contract
+        contract.methods.balanceOf(account).call().then(function(balance) {
+          document.getElementById("balance").value = balance;
+        });
+      });
+    }
+  </script>
 </html>
