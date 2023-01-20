@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First DAPP</title>
+
+</head>
+<body>
+    <h1>First Web3 Website</h1>
+
+    <button id="connect_btn">Connect Wallet</button>
+    <section id="account_info" style="display:none;">
+        <p id="wallet_address"></p>
+        <p id="wallet_balance"></p>
+
+    </section>
+
+    <section id="block_info" style="display:none;">
+        <h2>Part 1</h2>
+        <button onclick="getBlockHeight()">Get Goerli Block Height</button>
+        <input type="text" id="blockHeight" disabled>
+    </section>
+
+    <section id="token_info" style="display:none;">
+        <h2>Part 2</h2>
+        <button onclick="getBalance()">Get Balance</button>
+        <input type="text" id="balance" disabled>
+    </section>
+
+    <section id="transaction_info" style="display:none;">
+        <h2>Part 3</h2>
+    </section>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@1.2.9/dist/web3.min.js"></script>
+
+<script>
+
+    var web3
+    var walletAddress
+
+    /*
+     * CONNECTING TO METAMASK
+     */
+
+    const getWeb3 = async () => {
+        return new Promise(async (resolve, reject) => {
+            const web3 = new Web3(window.ethereum)
+
+            try {
+                await await ethereum.request({ method: 'eth_accounts' });
+                resolve(web3)
+            } catch (error) {
+                reject(error)
+            }
+        })
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("connect_btn").addEventListener("click", async({}) => {
+            web3 = await getWeb3()
+            walletAddress = await web3.eth.requestAccounts()
+            const walletBalanceInWei = await web3.eth.getBalance(walletAddress[0])
+            const walletBalanceInEth = Math.round(Web3.utils.fromWei(walletBalanceInWei) * 1000) / 1000
+            
+            document.getElementById("connect_btn").setAttribute("style", "display:none")
+
+            document.getElementById("account_info").setAttribute("style", "display:block")
+            document.getElementById("block_info").setAttribute("style", "display:block")
+            document.getElementById("token_info").setAttribute("style", "display:block")
+            document.getElementById("transaction_info").setAttribute("style", "display:block")
+
+            document.getElementById("wallet_address").innerText = `Wallet: ${walletAddress[0]}`
+            // Wei Balance; to ETH conversion
+            document.getElementById("wallet_balance").innerText = `Balance: ${walletBalanceInEth} ETH`
+        })
+    })
+
+    /*
+     * PART 1
+     *
+     * display current block height of Goerli testnet
+     */
+    const getBlockHeight = async() => {
+        web3.eth.getBlockNumber().then(function(blockHeight) {
+            document.getElementById("blockHeight").value = blockHeight;
+        });
+    }
+
+    /*
+     * PART 2
+     *
+     * invoke balanceOf() function of the ERC20 Token
+     */
+    const getBalance = async() => {
+        // Contract ABI
+            // can't figure out how to fetch json via a file
+        const abiJSON = `[
+            {
+                "inputs": [],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "value",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Approval",
+                "type": "event"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "approve",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "subtractedValue",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "decreaseAllowance",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "addedValue",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "increaseAllowance",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transfer",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "value",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Transfer",
+                "type": "event"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transferFrom",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    }
+                ],
+                "name": "whitelist",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    }
+                ],
+                "name": "allowance",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "balanceOf",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [
+                    {
+                        "internalType": "uint8",
+                        "name": "",
+                        "type": "uint8"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "name",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "symbol",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ]`
+
+        const abiParsed = JSON.parse(abiJSON)
+        // const abi = abiJSON.abi
+
+        // Contract address on the Görli testnet
+        var contractAddress = "0xC1EeB68cE9a6Ff654C8Ea8b05C0Ed6a14717e273";
+
+        const contract = new web3.eth.Contract(abiParsed, contractAddress)
+
+        const tokenBalance = await contract.methods.balanceOf(walletAddress[0]).call()
+        const tokenBalanceDecimal = Math.round(Web3.utils.fromWei(tokenBalance) * 1000) / 1000
+
+        document.getElementById("balance").value = tokenBalanceDecimal
+    }    
+
+    /*
+     * PART 3
+     *
+     * invoke transfer() function and send amount(10) of ERC20 Token to 0x15433DA387451F9dE4565280C85506CB71aF9376
+     */
+
+    const transaction = async => {
+        web3.eth.transaction()
+    }
+  </script>
+</html>
