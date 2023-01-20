@@ -20,17 +20,20 @@
     <section id="block_info" style="display:none;">
         <h2>Part 1</h2>
         <button onclick="getBlockHeight()">Get Goerli Block Height</button>
-        <input type="text" id="blockHeight" disabled>
+        <p id="blockHeight"></p>
     </section>
 
     <section id="token_info" style="display:none;">
         <h2>Part 2</h2>
         <button onclick="getBalance()">Get Balance</button>
-        <input type="text" id="balance" disabled>
+        <p id="balance"></p>
     </section>
-
+    
     <section id="transaction_info" style="display:none;">
         <h2>Part 3</h2>
+        <button onclick="transaction()">Transfer(10)</button>
+        <!-- <input type="text" id="transaction_hash" disabled> -->
+        <p id="transaction_hash"></p>
     </section>
 </body>
 
@@ -38,66 +41,14 @@
 
 <script>
 
+    /*
+     * GLOBAL VARIABLES
+     */
     var web3
     var walletAddress
-
-    /*
-     * CONNECTING TO METAMASK
-     */
-
-    const getWeb3 = async () => {
-        return new Promise(async (resolve, reject) => {
-            const web3 = new Web3(window.ethereum)
-
-            try {
-                await await ethereum.request({ method: 'eth_accounts' });
-                resolve(web3)
-            } catch (error) {
-                reject(error)
-            }
-        })
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("connect_btn").addEventListener("click", async({}) => {
-            web3 = await getWeb3()
-            walletAddress = await web3.eth.requestAccounts()
-            const walletBalanceInWei = await web3.eth.getBalance(walletAddress[0])
-            const walletBalanceInEth = Math.round(Web3.utils.fromWei(walletBalanceInWei) * 1000) / 1000
-            
-            document.getElementById("connect_btn").setAttribute("style", "display:none")
-
-            document.getElementById("account_info").setAttribute("style", "display:block")
-            document.getElementById("block_info").setAttribute("style", "display:block")
-            document.getElementById("token_info").setAttribute("style", "display:block")
-            document.getElementById("transaction_info").setAttribute("style", "display:block")
-
-            document.getElementById("wallet_address").innerText = `Wallet: ${walletAddress[0]}`
-            // Wei Balance; to ETH conversion
-            document.getElementById("wallet_balance").innerText = `Balance: ${walletBalanceInEth} ETH`
-        })
-    })
-
-    /*
-     * PART 1
-     *
-     * display current block height of Goerli testnet
-     */
-    const getBlockHeight = async() => {
-        web3.eth.getBlockNumber().then(function(blockHeight) {
-            document.getElementById("blockHeight").value = blockHeight;
-        });
-    }
-
-    /*
-     * PART 2
-     *
-     * invoke balanceOf() function of the ERC20 Token
-     */
-    const getBalance = async() => {
-        // Contract ABI
-            // can't figure out how to fetch json via a file
-        const abiJSON = `[
+    // Contract ABI
+        // can't figure out how to fetch json via a file
+    const abiJSON = `[
             {
                 "inputs": [],
                 "stateMutability": "nonpayable",
@@ -387,29 +338,101 @@
                 "type": "function"
             }
         ]`
-
-        const abiParsed = JSON.parse(abiJSON)
-        // const abi = abiJSON.abi
-
-        // Contract address on the Görli testnet
-        var contractAddress = "0xC1EeB68cE9a6Ff654C8Ea8b05C0Ed6a14717e273";
-
-        const contract = new web3.eth.Contract(abiParsed, contractAddress)
-
-        const tokenBalance = await contract.methods.balanceOf(walletAddress[0]).call()
-        const tokenBalanceDecimal = Math.round(Web3.utils.fromWei(tokenBalance) * 1000) / 1000
-
-        document.getElementById("balance").value = tokenBalanceDecimal
-    }    
+    // Contract address on the Görli testnet
+    const contractAddress = "0xC1EeB68cE9a6Ff654C8Ea8b05C0Ed6a14717e273";
 
     /*
-     * PART 3
-     *
-     * invoke transfer() function and send amount(10) of ERC20 Token to 0x15433DA387451F9dE4565280C85506CB71aF9376
+     * CONNECTING TO METAMASK
      */
+    const getWeb3 = async () => {
+        return new Promise(async (resolve, reject) => {
+            const web3 = new Web3(window.ethereum)
 
-    const transaction = async => {
-        web3.eth.transaction()
+            try {
+                await await ethereum.request({ method: 'eth_accounts' });
+                resolve(web3)
+            } catch (error) {
+                reject(error)
+            }
+        })
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("connect_btn").addEventListener("click", async({}) => {
+            web3 = await getWeb3()
+            walletAddress = await web3.eth.requestAccounts()
+            const walletBalanceInWei = await web3.eth.getBalance(walletAddress[0])
+            const walletBalanceInEth = Math.round(Web3.utils.fromWei(walletBalanceInWei) * 1000) / 1000
+            
+            document.getElementById("connect_btn").setAttribute("style", "display:none")
+
+            document.getElementById("account_info").setAttribute("style", "display:block")
+            document.getElementById("block_info").setAttribute("style", "display:block")
+            document.getElementById("token_info").setAttribute("style", "display:block")
+            document.getElementById("transaction_info").setAttribute("style", "display:block")
+
+            document.getElementById("wallet_address").innerText = `Wallet: ${walletAddress[0]}`
+            // Wei Balance; to ETH conversion
+            document.getElementById("wallet_balance").innerText = `Balance: ${walletBalanceInEth} ETH`
+        })
+    })
+
+    /*
+     * PART 1
+     *
+     * display current block height of Goerli testnet
+     */
+    const getBlockHeight = async() => {
+        web3.eth.getBlockNumber().then(function(blockHeight) {
+            document.getElementById("blockHeight").innerText = `Block Height: ${blockHeight}`;
+        });
+    }
+
+    /*
+     * PART 2
+     *
+     * invoke balanceOf() function of the ERC20 Token
+     */
+    const getBalance = async() => {
+        
+        var contract = initContract()
+        
+        const tokenBalance = await contract.methods.balanceOf(walletAddress[0]).call()
+        const tokenBalanceDecimal = Math.round(Web3.utils.fromWei(tokenBalance) * 1000) / 1000
+        
+        document.getElementById("balance").innerText = `Balance: ${tokenBalanceDecimal} PLTP`;
+    }    
+    
+    /*
+    * PART 3
+    *
+    * invoke transfer() function and send amount(10) of ERC20 Token to 0x15433DA387451F9dE4565280C85506CB71aF9376
+    */
+    const transaction = async() => {
+        const toAddress = "0x15433DA387451F9dE4565280C85506CB71aF9376"
+        const amount = web3.utils.toBN(10)
+        const decimals = web3.utils.toBN(18)
+        
+        var contract = initContract()
+
+        const value = amount.mul(web3.utils.toBN(10).pow(decimals))
+
+        // const transaction = contract.methods.transfer(receiverAddress, 10).send()
+        // call transfer function
+        
+        contract.methods.transfer(toAddress, value).send({from: walletAddress[0]})
+        .on('transactionHash', function(hash){
+            console.log(hash)
+            document.getElementById("transaction_hash").innerHTML = `Txn Hash: ${hash}`;
+        })
+    }
+    
+    /*
+    * instantiate contract from abi & address
+    */
+    function initContract() {
+        const abiParsed = JSON.parse(abiJSON)
+        return new web3.eth.Contract(abiParsed, contractAddress)        
     }
   </script>
 </html>
